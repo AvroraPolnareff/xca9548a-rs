@@ -223,7 +223,7 @@ pub struct Xca954xaData<I2C> {
 
 impl<I2C, E> SelectChannels for Xca954xaData<I2C>
 where
-    I2C: i2c::I2c<Error = E>,
+    I2C: I2c<Error = E>,
 {
     type Error = Error<E>;
     fn select_channels(&mut self, channels: u8) -> Result<(), Self::Error> {
@@ -281,7 +281,7 @@ macro_rules! i2c_traits {
             }
         }
 
-        impl<I2C, E> i2c::Write for $name<I2C>
+        impl<I2C, E> i2c::I2c for $name<I2C>
         where
             I2C: i2c::Write<Error = E>,
         {
@@ -292,7 +292,7 @@ macro_rules! i2c_traits {
             }
         }
 
-        impl<I2C, E> i2c::Read for $name<I2C>
+        impl<I2C, E> i2c::I2c for $name<I2C>
         where
             I2C: i2c::Read<Error = E>,
         {
@@ -303,9 +303,9 @@ macro_rules! i2c_traits {
             }
         }
 
-        impl<I2C, E> i2c::WriteRead for $name<I2C>
+        impl<I2C, E> i2c::I2c for $name<I2C>
         where
-            I2C: i2c::WriteRead<Error = E>,
+            I2C: i2c::I2c<Error = E>,
         {
             type Error = Error<E>;
 
@@ -360,7 +360,7 @@ macro_rules! impl_device {
 
         impl<I2C, E> $name<I2C>
         where
-            I2C: i2c::Read<Error = E>,
+            I2C: i2c::I2c<Error = E>,
         {
             /// Get status of channels.
             ///
@@ -382,7 +382,7 @@ macro_rules! impl_device {
 
         impl<I2C, E> $name<I2C>
         where
-            I2C: i2c::Write<Error = E>,
+            I2C: i2c::I2c<Error = E>,
         {
             /// Select which channels are enabled.
             ///
@@ -401,7 +401,7 @@ macro_rules! impl_device {
 
         impl<I2C, E> $name<I2C>
         where
-            I2C: i2c::Read<Error = E>,
+            I2C: i2c::I2c<Error = E>,
         {
             /// Get status of channels.
             ///
@@ -439,7 +439,7 @@ macro_rules! impl_device {
 
         impl<I2C, E> $name<I2C>
         where
-            I2C: i2c::Write<Error = E>,
+            I2C: i2c::I2c<Error = E>,
         {
             /// Select which channels are enabled.
             ///

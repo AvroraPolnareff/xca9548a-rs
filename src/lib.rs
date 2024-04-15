@@ -83,7 +83,7 @@
 //! ### Reading and writing to device connected to channel 0 (SD0/SC0 pins)
 //!
 //! ```no_run
-//! use embedded_hal::blocking::i2c::{ Read, Write };
+//! use embedded_hal::i2c::I2c;
 //! use linux_embedded_hal::I2cdev;
 //! use xca9548a::{Xca9548a, SlaveAddr};
 //!
@@ -101,7 +101,7 @@
 //! i2c_switch.read(slave_address, &mut read_data).unwrap();
 //!
 //! // Write some data to the slave
-//! i2c_switch.write(slave_address, &data_for_slave).unwrap();
+//! i2c_switch.write(&data_for_slave).unwrap();
 //! ```
 //!
 //! ### Splitting into individual I2C devices and passing them into drivers
@@ -111,7 +111,7 @@
 //! Switching will be done automatically as necessary.
 //!
 //! ```no_run
-//! use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
+//! use embedded_hal::i2c::I2c;
 //! use linux_embedded_hal::I2cdev;
 //! use xca9548a::{Xca9548a, SlaveAddr};
 //!
@@ -122,7 +122,7 @@
 //! }
 //!
 //! impl<I2C, E> Driver<I2C>
-//! where I2C: Write<Error = E> + Read<Error = E> + WriteRead<Error = E> {
+//! where I2C: I2c<Error = E> {
 //!     pub fn new(i2c: I2C) -> Self {
 //!         Driver { i2c }
 //!     }
@@ -143,7 +143,7 @@
 //! Switching will be done automatically as necessary.
 //!
 //! ```no_run
-//! use embedded_hal::blocking::i2c::{ Read, Write };
+//! use embedded_hal::i2c::I2c;
 //! use linux_embedded_hal::I2cdev;
 //! use xca9548a::{Xca9548a, SlaveAddr};
 //!
@@ -170,7 +170,8 @@
 #![no_std]
 
 use core::cell;
-use embedded_hal::blocking::i2c;
+use embedded_hal::i2c;
+use embedded_hal::i2c::I2c;
 
 /// All possible errors in this crate
 #[derive(Debug)]
@@ -222,7 +223,7 @@ pub struct Xca954xaData<I2C> {
 
 impl<I2C, E> SelectChannels for Xca954xaData<I2C>
 where
-    I2C: i2c::Write<Error = E>,
+    I2C: i2c::I2c<Error = E>,
 {
     type Error = Error<E>;
     fn select_channels(&mut self, channels: u8) -> Result<(), Self::Error> {

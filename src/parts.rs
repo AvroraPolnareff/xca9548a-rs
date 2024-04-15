@@ -1,6 +1,7 @@
 use crate::{DoOnAcquired, Error, SelectChannels};
 use core::marker::PhantomData;
-use embedded_hal::blocking::i2c;
+use embedded_hal::i2c;
+use embedded_hal::i2c::{ErrorType, Operation, SevenBitAddress};
 
 /// Slave I2C device
 pub struct I2cSlave<'a, DEV: 'a, I2C>(&'a DEV, u8, PhantomData<I2C>);
@@ -37,12 +38,21 @@ parts!(
     Parts4; i2c0, 0x01, i2c1, 0x02, i2c2, 0x04, i2c3, 0x08
 );
 
-impl<'a, DEV, I2C, E> i2c::Write for I2cSlave<'a, DEV, I2C>
+impl<'a, DEV, I2C, E> ErrorType for I2cSlave<'a, DEV, I2C> where DEV: DoOnAcquired<I2C>, I2C: i2c::I2c<Error=E> { type Error = Error<E>; }
+
+impl<'a, DEV, I2C, E> i2c::I2c for I2cSlave<'a, DEV, I2C>
 where
     DEV: DoOnAcquired<I2C>,
-    I2C: i2c::Write<Error = E>,
+    I2C: i2c::I2c<Error = E>,
 {
-    type Error = Error<E>;
+    fn read(&mut self, address: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
+        self.0.do_on_acquired(|mut dev| {
+            if dev.selected_channel_mask != self.1 {
+                dev.select_channels(self.1)?;
+            }
+            dev.i2c.read(address, buffer).map_err(Error::I2C)
+        })
+    }
 
     fn write(&mut self, address: u8, bytes: &[u8]) -> Result<(), Self::Error> {
         self.0.do_on_acquired(|mut dev| {
@@ -52,31 +62,6 @@ where
             dev.i2c.write(address, bytes).map_err(Error::I2C)
         })
     }
-}
-
-impl<'a, DEV, I2C, E> i2c::Read for I2cSlave<'a, DEV, I2C>
-where
-    DEV: DoOnAcquired<I2C>,
-    I2C: i2c::Write<Error = E> + i2c::Read<Error = E>,
-{
-    type Error = Error<E>;
-
-    fn read(&mut self, address: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
-        self.0.do_on_acquired(|mut dev| {
-            if dev.selected_channel_mask != self.1 {
-                dev.select_channels(self.1)?;
-            }
-            dev.i2c.read(address, buffer).map_err(Error::I2C)
-        })
-    }
-}
-
-impl<'a, DEV, I2C, E> i2c::WriteRead for I2cSlave<'a, DEV, I2C>
-where
-    DEV: DoOnAcquired<I2C>,
-    I2C: i2c::Write<Error = E> + i2c::WriteRead<Error = E>,
-{
-    type Error = Error<E>;
 
     fn write_read(
         &mut self,
@@ -89,8 +74,13 @@ where
                 dev.select_channels(self.1)?;
             }
             dev.i2c
-                .write_read(address, bytes, buffer)
-                .map_err(Error::I2C)
+              .write_read(address, bytes, buffer)
+              .map_err(Error::I2C)
         })
     }
+
+    fn transaction(&mut self, address: SevenBitAddress, operations: &mut [Operation<'_>]) -> Result<(), Self::Error> {
+        todo!()
+    }
 }
+
